@@ -37,7 +37,8 @@ def jaccard(query, texts):
     best_option = -1
     similar_text = None
     for text in texts:
-        temp = interseccion(texts.get(text),query) / union(texts.get(text),query)
+        temp = len(query.items() & texts.get(text).items()) / len(query.items() | texts.get(text).items())
+        #temp = interseccion(texts.get(text),query) / union(texts.get(text),query)
         if temp > best_option:
             best_option = temp
             similar_text = text
@@ -72,9 +73,9 @@ def string_to_bag_of_words(text):
     bow = {}
 
     for line in text:
-        result = str(line).split('\t')
-        key = result[0].rstrip()
-        blob = TextBlob(str(result[1]))
+        #result = str(line).split('\t')
+        #key = result[0].rstrip()
+        blob = TextBlob(text.get(line))
         tokens = blob.words
         aux = {}
         for token in tokens:
@@ -86,7 +87,7 @@ def string_to_bag_of_words(text):
                     aux[token] = 1
                 else:
                     aux[token] += 1
-        bow[key] = aux
+        bow[line] = aux
 
     return bow
 
@@ -97,7 +98,13 @@ def load_lines(filename):
     with open(filename, 'r') as file:
         lines = file.readlines()
         lines = [line.rstrip() for line in lines]
-    return lines
+
+    d = {}
+    for line in lines:
+        separator = line.split('\t')
+        d[separator[0]] = separator[1]
+
+    return d
 
 def load_stop_words(filename):
     """
@@ -126,11 +133,16 @@ def main():
     # Get the bag of words of the texts and queries
     bow_texts = string_to_bag_of_words(texts)
     bow_queries = string_to_bag_of_words(queries)
+    print(bow_texts)
 
-    query = bow_queries.get("I 365")
-    result = find_best_text(query, bow_texts, "jaccard")
-    print(result[0])
-    print(result[1])
+    counter = 1
+    for q in bow_queries:
+        result = find_best_text(bow_queries.get(q), bow_texts, "jaccard")
+        print(result[1])
+
+        result = find_best_text(bow_queries.get(q), bow_texts, "cosine")
+        print(counter, result[1])
+        counter += 1
 
 if __name__ == '__main__':
     main()
